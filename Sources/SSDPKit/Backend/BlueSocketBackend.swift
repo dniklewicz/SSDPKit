@@ -35,11 +35,15 @@ public class BlueSocketBackend: SSDPBackend {
             
             if bytesRead > 0,
                let url = locationURL(from: data) {
-                publisher?.send(url)
+                DispatchQueue.main.async { [weak self] in
+                    self?.publisher?.send(url)
+                }
             }
         } catch let error {
             forceStop()
-            publisher?.send(completion: .failure(error))
+            DispatchQueue.main.async { [weak self] in
+                self?.publisher?.send(completion: .failure(error))
+            }
         }
     }
 
@@ -85,14 +89,18 @@ public class BlueSocketBackend: SSDPBackend {
             try socket?.write(from: message, to: address)
         } catch let error {
             forceStop()
-            publisher?.send(completion: .failure(error))
+            DispatchQueue.main.async { [weak self] in
+                self?.publisher?.send(completion: .failure(error))
+            }
         }
     }
 
     func stopScanning() {
         if socket != nil {
             forceStop()
-            publisher?.send(completion: .finished)
+            DispatchQueue.main.async { [weak self] in
+                self?.publisher?.send(completion: .finished)
+            }
         }
     }
 }

@@ -18,7 +18,7 @@ extension NWEndpoint.Port {
     static let ssdp = NWEndpoint.Port(1900)
 }
 
-@available(macOS 11.0, *)
+@available(macOS 11.0, iOS 14.0, *)
 public class NWBackend: SSDPBackend {
     var publisher: PassthroughSubject<URL, Error>?
     

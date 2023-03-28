@@ -32,7 +32,7 @@ public class BlueSocketBackend: SSDPBackend {
         do {
             var data = Data()
             let (bytesRead, _) = try socket.readDatagram(into: &data)
-            
+
             if bytesRead > 0,
                let url = locationURL(from: data) {
                 DispatchQueue.main.async { [weak self] in
@@ -50,7 +50,7 @@ public class BlueSocketBackend: SSDPBackend {
     private func readResponses(forDuration duration: TimeInterval) {
         let queue = DispatchQueue.global()
 
-        queue.async() { [weak self] in
+        queue.async { [weak self] in
             while self?.isScanning == true {
                 self?.readResponses()
             }
@@ -69,7 +69,7 @@ public class BlueSocketBackend: SSDPBackend {
     }
 
     // MARK: Public API
-    
+
     func scan(for duration: TimeInterval = 10) {
         let message = "M-SEARCH * HTTP/1.1\r\n" +
             "MAN: \"ssdp:discover\"\r\n" +

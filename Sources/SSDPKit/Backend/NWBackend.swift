@@ -1,10 +1,4 @@
-//
-//  SSDPService.swift
-//  SSDPSandbox
-//
-//  Created by Dariusz Niklewicz on 09.08.2016.
 //  Copyright © 2016 Dariusz Niklewicz. All rights reserved.
-//
 
 import Combine
 import Foundation
@@ -21,13 +15,13 @@ extension NWEndpoint.Port {
 @available(macOS 11.0, iOS 14.0, *)
 public class NWBackend: SSDPBackend {
     var publisher: PassthroughSubject<URL, Error>?
-    
+
     private let listenerQueue = DispatchQueue(label: "Listener")
 
     var isScanning: Bool {
         connectionGroup != nil
     }
-    
+
     var connectionGroup: NWConnectionGroup?
 
     func sendBroadcast(for duration: TimeInterval) {
@@ -43,7 +37,7 @@ public class NWBackend: SSDPBackend {
     }
 
     init() { }
-    
+
     func scan(for duration: TimeInterval) {
         do {
             let endpoint = NWEndpoint.hostPort(host: .ssdp, port: .ssdp)
@@ -69,7 +63,7 @@ public class NWBackend: SSDPBackend {
                     print("Connection: Unknown")
                 }
             }
-            
+
             connectionGroup?.setReceiveHandler { [weak self] message, data, isComplete in
                 print(data ?? "", message, isComplete)
                 if let data = data,
@@ -77,9 +71,9 @@ public class NWBackend: SSDPBackend {
                     self?.publisher?.send(url)
                 }
             }
-            
+
             connectionGroup?.start(queue: listenerQueue)
-            
+
             listenerQueue.asyncAfter(deadline: .now() + duration) { [weak self] in
                 self?.stopScanning()
             }
@@ -87,7 +81,7 @@ public class NWBackend: SSDPBackend {
             publisher?.send(completion: .failure(error))
         }
     }
-    
+
     func stopScanning() {
         connectionGroup?.cancel()
         publisher?.send(completion: .finished)

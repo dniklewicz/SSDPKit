@@ -22,7 +22,7 @@ public class SSDPClient {
         backend.startScanning(for: duration)
     }
     
-    @available(macOS 13.0, *)
+	@available(macOS 13.0, iOS 16.0, *)
     public func startScanning(for duration: Duration) -> AnyPublisher<URL, Error> {
         let timeInterval = TimeInterval(duration.components.seconds) + Double(duration.components.attoseconds)/1e18
         return backend.startScanning(for: timeInterval)

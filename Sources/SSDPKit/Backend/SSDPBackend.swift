@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import Socket
 
 protocol SSDPBackend: AnyObject {
     var isScanning: Bool { get }

@@ -30,7 +30,7 @@ public class NWBackend: SSDPBackend {
             if let error = error {
                 self?.publisher?.send(completion: .failure(error))
             } else {
-                print("Broadcast sent")
+                print("SSDP: Broadcast sent")
             }
         }
     }
@@ -47,24 +47,23 @@ public class NWBackend: SSDPBackend {
             connectionGroup?.stateUpdateHandler = { [weak self] newState in
                 switch newState {
                 case .setup:
-                    print("Connection: Setup")
+                    print("SSDP: Connection: Setup")
                 case let .waiting(error):
-                    print("Waiting:", error)
+                    print("SSDP: Waiting:", error)
                 case .ready:
-                    print("Connection: Ready")
+                    print("SSDP: Connection: Ready")
                     self?.sendBroadcast(for: duration)
                 case let .failed(error):
-                    print("Connection: Failed")
+                    print("SSDP: Connection: Failed")
                     self?.publisher?.send(completion: .failure(error))
                 case .cancelled:
-                    print("Connection: Cancelled")
+                    print("SSDP: Connection: Cancelled")
                 @unknown default:
-                    print("Connection: Unknown")
+                    print("SSDP: Connection: Unknown")
                 }
             }
 
             connectionGroup?.setReceiveHandler { [weak self] message, data, isComplete in
-                print(data ?? "", message, isComplete)
                 if let data = data,
                    let url = self?.locationURL(from: data) {
                     self?.publisher?.send(url)

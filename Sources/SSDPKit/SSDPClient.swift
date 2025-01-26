@@ -5,13 +5,7 @@ public class SSDPClient {
     let backend: SSDPBackend
 
     public init() {
-        // Apple needs to fix NWMulticastGroup first
-        // https://developer.apple.com/forums/thread/680731
-        //        if #available(macOS 11.0, *) {
-        //            backend = NWBackend()
-        //        } else {
-        backend = BlueSocketBackend()
-        //        }
+		backend = NWBackend()
     }
 
     public var isScanning: Bool {

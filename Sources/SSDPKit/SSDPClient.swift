@@ -4,13 +4,17 @@ import Foundation
 public class SSDPClient {
     let backend: SSDPBackend
 
-    public init() {
-		backend = NWBackend()
+	public init(backend: SSDPBackend = NWBackend()) {
+		self.backend = backend
     }
 
     public var isScanning: Bool {
         backend.isScanning
     }
+	
+	public func setRequiredInterfaceType(_ interfaceType: RequiredInterfaceType?) {
+		backend.requiredInterfaceType = interfaceType
+	}
 
     public func startScanning(for duration: TimeInterval) -> AnyPublisher<URL, Error> {
         backend.startScanning(for: duration)

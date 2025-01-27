@@ -13,11 +13,13 @@ extension NWEndpoint.Port {
 }
 
 public class NWBackend: SSDPBackend {
-    var publisher: PassthroughSubject<URL, Error>?
+	public var requiredInterfaceType: RequiredInterfaceType?
+	
+	public var publisher: PassthroughSubject<URL, Error>?
 
     private let listenerQueue = DispatchQueue(label: "Listener")
 
-    var isScanning: Bool {
+	public var isScanning: Bool {
         connectionGroup != nil
     }
 
@@ -35,13 +37,21 @@ public class NWBackend: SSDPBackend {
         }
     }
 
-    init() { }
+    public init() { }
 
-    func scan(for duration: TimeInterval) {
+	public func scan(for duration: TimeInterval) {
         do {
             let endpoint = NWEndpoint.hostPort(host: .ssdp, port: .ssdp)
             let multicastGroup = try NWMulticastGroup(for: [endpoint])
             let parameters: NWParameters = .udp
+			switch requiredInterfaceType {
+			case .wifi:
+				parameters.requiredInterfaceType = .wifi
+			case .ethernet:
+				parameters.requiredInterfaceType = .wiredEthernet
+			case nil:
+				break
+			}
             parameters.allowLocalEndpointReuse = true
             connectionGroup = NWConnectionGroup(with: multicastGroup, using: parameters)
             connectionGroup?.stateUpdateHandler = { [weak self] newState in
@@ -80,7 +90,7 @@ public class NWBackend: SSDPBackend {
         }
     }
 
-    func stopScanning() {
+	public func stopScanning() {
         connectionGroup?.cancel()
         publisher?.send(completion: .finished)
     }

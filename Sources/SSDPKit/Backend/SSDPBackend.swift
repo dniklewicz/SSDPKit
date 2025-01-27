@@ -1,9 +1,14 @@
 import Combine
 import Foundation
 
-protocol SSDPBackend: AnyObject {
+public enum RequiredInterfaceType {
+	case wifi, ethernet
+}
+
+public protocol SSDPBackend: AnyObject {
     var isScanning: Bool { get }
     var publisher: PassthroughSubject<URL, Error>? { get set }
+	var requiredInterfaceType: RequiredInterfaceType? { get set }
 
     func scan(for duration: TimeInterval)
     func startScanning(for duration: TimeInterval) -> AnyPublisher<URL, Error>
@@ -13,7 +18,7 @@ protocol SSDPBackend: AnyObject {
     func locationURL(from data: Data) -> URL?
 }
 
-extension SSDPBackend {
+public extension SSDPBackend {
     func startScanning(for duration: TimeInterval) -> AnyPublisher<URL, Error> {
         let publisher = PassthroughSubject<URL, Error>()
         self.publisher = publisher

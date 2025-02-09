@@ -2,10 +2,24 @@ import Combine
 import Foundation
 
 public class SSDPClient {
-    let backend: SSDPBackend
+	public enum Backend {
+		case network
+		case blueSocket
+		
+		var backend: SSDPBackend {
+			switch self {
+			case .network:
+				NWBackend()
+			case .blueSocket:
+				BlueSocketBackend()
+			}
+		}
+	}
+	
+    var backend: SSDPBackend
 
-	public init(backend: SSDPBackend = NWBackend()) {
-		self.backend = backend
+	public init(backend: Backend = .network) {
+		self.backend = backend.backend
     }
 
     public var isScanning: Bool {
@@ -15,15 +29,16 @@ public class SSDPClient {
 	public func setRequiredInterfaceType(_ interfaceType: RequiredInterfaceType?) {
 		backend.requiredInterfaceType = interfaceType
 	}
+	
+	public func set(backend: Backend) {
+		if self.backend.isScanning {
+			self.backend.stopScanning()
+		}
+		self.backend = backend.backend
+	}
 
-    public func startScanning(for duration: TimeInterval) -> AnyPublisher<URL, Error> {
-        backend.startScanning(for: duration)
-    }
-    
-	@available(macOS 13.0, iOS 16.0, *)
     public func startScanning(for duration: Duration) -> AnyPublisher<URL, Error> {
-        let timeInterval = TimeInterval(duration.components.seconds) + Double(duration.components.attoseconds)/1e18
-        return backend.startScanning(for: timeInterval)
+        backend.startScanning(for: duration)
     }
 
     public func stopScanning() {

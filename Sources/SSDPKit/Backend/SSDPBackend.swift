@@ -10,8 +10,8 @@ public protocol SSDPBackend: AnyObject {
     var publisher: PassthroughSubject<URL, Error>? { get set }
 	var requiredInterfaceType: RequiredInterfaceType? { get set }
 
-    func scan(for duration: TimeInterval)
-    func startScanning(for duration: TimeInterval) -> AnyPublisher<URL, Error>
+	func scan(for duration: Duration)
+    func startScanning(for duration: Duration) -> AnyPublisher<URL, Error>
     func stopScanning()
 
     // Helper
@@ -19,7 +19,7 @@ public protocol SSDPBackend: AnyObject {
 }
 
 public extension SSDPBackend {
-    func startScanning(for duration: TimeInterval) -> AnyPublisher<URL, Error> {
+	func startScanning(for duration: Duration) -> AnyPublisher<URL, Error> {
         let publisher = PassthroughSubject<URL, Error>()
         self.publisher = publisher
         return publisher

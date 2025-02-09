@@ -5,16 +5,20 @@ import PackageDescription
 
 let package = Package(
     name: "SSDPKit",
-    platforms: [.macOS(.v13), .iOS(.v15)],
+    platforms: [.macOS(.v13), .iOS(.v16)],
     products: [
         .library(
             name: "SSDPKit",
             targets: ["SSDPKit"]),
         .executable(name: "SSDPClientExample", targets: ["SSDPClientExample"])
     ],
+	dependencies: [
+			.package(url: "https://github.com/Kitura/BlueSocket.git", from: "2.0.2")
+		],
     targets: [
         .target(
-            name: "SSDPKit"
+            name: "SSDPKit",
+			dependencies: [.product(name: "Socket", package: "BlueSocket")]
 		),
         .executableTarget(name: "SSDPClientExample", dependencies: ["SSDPKit"]),
         .testTarget(

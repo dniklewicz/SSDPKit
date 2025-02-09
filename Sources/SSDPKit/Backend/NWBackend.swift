@@ -25,8 +25,8 @@ public class NWBackend: SSDPBackend {
 
     var connectionGroup: NWConnectionGroup?
 
-    func sendBroadcast(for duration: TimeInterval) {
-        let message = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: \(Int(duration))\r\nST: ssdp:all\r\n\r\n".data(using: .utf8)
+	func sendBroadcast(for duration: Duration) {
+		let message = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: \(Int(duration.components.seconds))\r\nST: ssdp:all\r\n\r\n".data(using: .utf8)
 
         connectionGroup?.send(content: message) { [weak self] error in
             if let error = error {
@@ -39,7 +39,7 @@ public class NWBackend: SSDPBackend {
 
     public init() { }
 
-	public func scan(for duration: TimeInterval) {
+	public func scan(for duration: Duration) {
         do {
             let endpoint = NWEndpoint.hostPort(host: .ssdp, port: .ssdp)
             let multicastGroup = try NWMulticastGroup(for: [endpoint])
@@ -57,19 +57,19 @@ public class NWBackend: SSDPBackend {
             connectionGroup?.stateUpdateHandler = { [weak self] newState in
                 switch newState {
                 case .setup:
-                    print("SSDP: Connection: Setup")
+                    print("SSDP NWBackend: Connection: Setup")
                 case let .waiting(error):
-                    print("SSDP: Waiting:", error)
+                    print("SSDP NWBackend: Waiting:", error)
                 case .ready:
-                    print("SSDP: Connection: Ready")
+                    print("SSDP NWBackend: Connection: Ready")
                     self?.sendBroadcast(for: duration)
                 case let .failed(error):
-                    print("SSDP: Connection: Failed")
+                    print("SSDP NWBackend: Connection: Failed")
                     self?.publisher?.send(completion: .failure(error))
                 case .cancelled:
-                    print("SSDP: Connection: Cancelled")
+                    print("SSDP NWBackend: Connection: Cancelled")
                 @unknown default:
-                    print("SSDP: Connection: Unknown")
+                    print("SSDP NWBackend: Connection: Unknown")
                 }
             }
 
@@ -82,7 +82,7 @@ public class NWBackend: SSDPBackend {
 
             connectionGroup?.start(queue: listenerQueue)
 
-            listenerQueue.asyncAfter(deadline: .now() + duration) { [weak self] in
+			listenerQueue.asyncAfter(deadline: .now() + .seconds(Int(duration.components.seconds))) { [weak self] in
                 self?.stopScanning()
             }
         } catch {
@@ -93,5 +93,6 @@ public class NWBackend: SSDPBackend {
 	public func stopScanning() {
         connectionGroup?.cancel()
         publisher?.send(completion: .finished)
+		connectionGroup = nil
     }
 }

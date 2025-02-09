@@ -5,7 +5,7 @@ import SSDPKit
 
 let ssdp = SSDPClient()
 
-let publisher = ssdp.startScanning(for: 30)
+let publisher = ssdp.startScanning(for: .seconds(30))
 var finished = false
 
 let subscription = publisher.sink { completion in

@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 public class SSDPClient {
-	public enum Backend {
+	public enum Backend: String {
 		case network
 		case blueSocket
 		

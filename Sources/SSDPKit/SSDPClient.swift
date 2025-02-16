@@ -16,9 +16,9 @@ public class SSDPClient {
 		}
 	}
 	
-    var backend: SSDPBackend
+    public private(set) var backend: SSDPBackend
 
-	public init(backend: Backend = .network) {
+	public init(backend: Backend) {
 		self.backend = backend.backend
     }
 

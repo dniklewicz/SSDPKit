@@ -3,7 +3,7 @@
 import Foundation
 import SSDPKit
 
-let ssdp = SSDPClient()
+let ssdp = SSDPClient(backend: .network)
 
 let publisher = ssdp.startScanning(for: .seconds(30))
 var finished = false

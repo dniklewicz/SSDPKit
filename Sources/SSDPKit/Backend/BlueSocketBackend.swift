@@ -28,24 +28,18 @@ public class BlueSocketBackend: SSDPBackend {
 	// MARK: Private functions
 
 	private func readResponses() {
-		guard let socket = self.socket else {
-			return
-		}
+		guard let socket else { return }
 		do {
 			var data = Data()
 			let (bytesRead, _) = try socket.readDatagram(into: &data)
 
 			if bytesRead > 0,
 			   let url = locationURL(from: data) {
-				DispatchQueue.main.async { [weak self] in
-					self?.publisher?.send(url)
-				}
+				publisher?.send(url)
 			}
 		} catch let error {
 			forceStop()
-			DispatchQueue.main.async { [weak self] in
-				self?.publisher?.send(completion: .failure(error))
-			}
+			publisher?.send(completion: .failure(error))
 		}
 	}
 
@@ -91,18 +85,14 @@ public class BlueSocketBackend: SSDPBackend {
 			try socket?.write(from: message, to: address)
 		} catch let error {
 			forceStop()
-			DispatchQueue.main.async { [weak self] in
-				self?.publisher?.send(completion: .failure(error))
-			}
+			publisher?.send(completion: .failure(error))
 		}
 	}
 
 	public func stopScanning() {
 		if socket != nil {
 			forceStop()
-			DispatchQueue.main.async { [weak self] in
-				self?.publisher?.send(completion: .finished)
-			}
+			publisher?.send(completion: .finished)
 		}
 	}
 }

@@ -29,7 +29,7 @@ public class NWBackend: SSDPBackend {
 		let message = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: \(Int(duration.components.seconds))\r\nST: ssdp:all\r\n\r\n".data(using: .utf8)
 
         connectionGroup?.send(content: message) { [weak self] error in
-            if let error = error {
+            if let error {
                 self?.publisher?.send(completion: .failure(error))
             } else {
                 print("SSDP: Broadcast sent")

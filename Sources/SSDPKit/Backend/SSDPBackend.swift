@@ -20,6 +20,7 @@ public protocol SSDPBackend: AnyObject {
 
 public extension SSDPBackend {
 	func startScanning(for duration: Duration) -> AnyPublisher<URL, Error> {
+		self.publisher?.send(completion: .finished)
         let publisher = PassthroughSubject<URL, Error>()
         self.publisher = publisher
         return publisher

@@ -7,11 +7,11 @@ public enum RequiredInterfaceType {
 
 public protocol SSDPBackend: AnyObject {
     var isScanning: Bool { get }
-    var publisher: PassthroughSubject<URL, Error>? { get set }
+    var publisher: PassthroughSubject<Result<URL, Error>, Never> { get }
 	var requiredInterfaceType: RequiredInterfaceType? { get set }
 
 	func scan(for duration: Duration)
-    func startScanning(for duration: Duration) -> AnyPublisher<URL, Error>
+    func startScanning(for duration: Duration) -> AnyPublisher<Result<URL, Error>, Never>
     func stopScanning()
 
     // Helper
@@ -19,12 +19,8 @@ public protocol SSDPBackend: AnyObject {
 }
 
 public extension SSDPBackend {
-	func startScanning(for duration: Duration) -> AnyPublisher<URL, Error> {
-		self.publisher?.send(completion: .finished)
-        let publisher = PassthroughSubject<URL, Error>()
-        self.publisher = publisher
+	func startScanning(for duration: Duration) -> AnyPublisher<Result<URL, Error>, Never> {
         return publisher
-            .removeDuplicates()
             .handleEvents { [weak self] _ in
                 // Start scan only when subscriber appears
                 if self?.isScanning == false {

@@ -15,7 +15,7 @@ extension NWEndpoint.Port {
 public class NWBackend: SSDPBackend {
 	public var requiredInterfaceType: RequiredInterfaceType?
 	
-	public var publisher: PassthroughSubject<URL, Error>?
+	public var publisher: PassthroughSubject<Result<URL, any Error>, Never> = .init()
 
     private let listenerQueue = DispatchQueue(label: "Listener")
 
@@ -30,7 +30,7 @@ public class NWBackend: SSDPBackend {
 
         connectionGroup?.send(content: message) { [weak self] error in
             if let error {
-                self?.publisher?.send(completion: .failure(error))
+				self?.publisher.send(.failure(error))
             } else {
                 print("SSDP: Broadcast sent")
             }
@@ -65,7 +65,7 @@ public class NWBackend: SSDPBackend {
                     self?.sendBroadcast(for: duration)
                 case let .failed(error):
                     print("SSDP NWBackend: Connection: Failed")
-                    self?.publisher?.send(completion: .failure(error))
+					self?.publisher.send(.failure(error))
                 case .cancelled:
                     print("SSDP NWBackend: Connection: Cancelled")
                 @unknown default:
@@ -76,7 +76,7 @@ public class NWBackend: SSDPBackend {
             connectionGroup?.setReceiveHandler { [weak self] message, data, isComplete in
                 if let data = data,
                    let url = self?.locationURL(from: data) {
-                    self?.publisher?.send(url)
+					self?.publisher.send(.success(url))
                 }
             }
 
@@ -86,13 +86,13 @@ public class NWBackend: SSDPBackend {
                 self?.stopScanning()
             }
         } catch {
-            publisher?.send(completion: .failure(error))
+			publisher.send(.failure(error))
         }
     }
 
 	public func stopScanning() {
         connectionGroup?.cancel()
-        publisher?.send(completion: .finished)
+        publisher.send(completion: .finished)
 		connectionGroup = nil
     }
 }

@@ -11,7 +11,7 @@ public class BlueSocketBackend: SSDPBackend {
 
 	private var socket: Socket?
 
-	public var publisher: PassthroughSubject<URL, Error>?
+	public var publisher: PassthroughSubject<Result<URL, any Error>, Never> = .init()
 
 	public var isScanning: Bool {
 		socket != nil
@@ -35,11 +35,11 @@ public class BlueSocketBackend: SSDPBackend {
 
 			if bytesRead > 0,
 			   let url = locationURL(from: data) {
-				publisher?.send(url)
+				publisher.send(.success(url))
 			}
 		} catch let error {
 			forceStop()
-			publisher?.send(completion: .failure(error))
+			publisher.send(.failure(error))
 		}
 	}
 
@@ -85,14 +85,13 @@ public class BlueSocketBackend: SSDPBackend {
 			try socket?.write(from: message, to: address)
 		} catch let error {
 			forceStop()
-			publisher?.send(completion: .failure(error))
+			publisher.send(.failure(error))
 		}
 	}
 
 	public func stopScanning() {
 		if socket != nil {
 			forceStop()
-			publisher?.send(completion: .finished)
 		}
 	}
 }

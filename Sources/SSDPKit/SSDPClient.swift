@@ -37,7 +37,7 @@ public class SSDPClient {
 		self.backend = backend.backend
 	}
 
-    public func startScanning(for duration: Duration) -> AnyPublisher<URL, Error> {
+    public func startScanning(for duration: Duration) -> AnyPublisher<Result<URL, Error>, Never> {
         backend.startScanning(for: duration)
     }
 

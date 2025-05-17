@@ -14,7 +14,21 @@ extension NWEndpoint.Port {
     static let ssdp = NWEndpoint.Port(1900)
 }
 
-public class NWBackend: SSDPBackend {
+public actor NWBackend: SSDPBackend {
+	public var subscriptionsCount: Int = 0
+	
+	public func incrementSubscriptionsCount() {
+		subscriptionsCount += 1
+	}
+	
+	public func decrementSubscriptionsCount() {
+		subscriptionsCount -= 1
+	}
+	
+	public func set(requiredInterfaceType: RequiredInterfaceType?) {
+		self.requiredInterfaceType = requiredInterfaceType
+	}
+	
 	public var requiredInterfaceType: RequiredInterfaceType?
 	
 	public var publisher: PassthroughSubject<Result<URL, any Error>, Never> = .init()
@@ -45,89 +59,79 @@ public class NWBackend: SSDPBackend {
 
 		connectionGroup?.send(content: message) { [weak self] error in
 			if let error {
-				self?.publisher.send(.failure(error))
+				Task {
+					await self?.publisher.send(.failure(error))
+				}
 			} else {
 				print("📡 SSDP: Broadcast sent")
 			}
 		}
 	}
+	
+	func setGroupStarted(_ started: Bool) {
+		self.isGroupStarted = started
+	}
 
 	private func startConnectionGroupIfNeeded(duration: Duration) {
 		guard !isGroupStarted else { return }
-
-		let monitor = NWPathMonitor()
-		monitor.pathUpdateHandler = { [weak self] path in
-			guard let self else { return }
-			monitor.cancel()
-
-			// Fallback if interface is missing
+		
+		do {
+			let endpoint = NWEndpoint.hostPort(host: .ssdp, port: .ssdp)
+			let group = try NWMulticastGroup(for: [endpoint])
+			let parameters: NWParameters = .udp
+			
 			switch self.requiredInterfaceType {
-			case .wifi where !path.usesInterfaceType(.wifi):
-				print("⚠️ Wi-Fi not available – falling back to any interface")
-				self.requiredInterfaceType = nil
-			case .ethernet where !path.usesInterfaceType(.wiredEthernet):
-				print("⚠️ Ethernet not available – falling back to any interface")
-				self.requiredInterfaceType = nil
-			default:
+			case .wifi:
+				parameters.requiredInterfaceType = .wifi
+			case .ethernet:
+				parameters.requiredInterfaceType = .wiredEthernet
+			case nil:
 				break
 			}
-
-			do {
-				let endpoint = NWEndpoint.hostPort(host: .ssdp, port: .ssdp)
-				let group = try NWMulticastGroup(for: [endpoint])
-				let parameters: NWParameters = .udp
-
-				switch self.requiredInterfaceType {
-				case .wifi:
-					parameters.requiredInterfaceType = .wifi
-				case .ethernet:
-					parameters.requiredInterfaceType = .wiredEthernet
-				case nil:
-					break
-				}
-
-				parameters.allowLocalEndpointReuse = true
-
-				let connectionGroup = NWConnectionGroup(with: group, using: parameters)
-				self.connectionGroup = connectionGroup
-
-				connectionGroup.stateUpdateHandler = { [weak self] state in
+			
+			parameters.allowLocalEndpointReuse = true
+			
+			let connectionGroup = NWConnectionGroup(with: group, using: parameters)
+			self.connectionGroup = connectionGroup
+			
+			connectionGroup.stateUpdateHandler = { [weak self] state in
+				Task {
 					guard let self else { return }
-
+					
 					switch state {
 					case .ready:
 						print("✅ SSDP Connection: Ready")
-						self.isGroupStarted = true
-
+						await self.setGroupStarted(true)
+						
 					case .failed(let error):
 						print("❌ SSDP Connection: Failed", error)
-						self.publisher.send(.failure(error))
-						self.cleanupConnectionGroup()
-
+						await self.publisher.send(.failure(error))
+						await self.cleanupConnectionGroup()
+						
 					case .cancelled:
 						print("🛑 SSDP Connection: Cancelled")
-						self.cleanupConnectionGroup()
-
+						await self.cleanupConnectionGroup()
+						
 					default:
 						break
 					}
 				}
-
-				connectionGroup.setReceiveHandler { [weak self] message, data, _ in
+			}
+			
+			connectionGroup.setReceiveHandler { [weak self] message, data, _ in
+				Task { [weak self] in
 					if let data = data,
-					   let url = self?.locationURL(from: data) {
-						self?.publisher.send(.success(url))
+					   let url = await self?.locationURL(from: data) {
+						await self?.publisher.send(.success(url))
 					}
 				}
-
-				connectionGroup.start(queue: self.listenerQueue)
-
-			} catch {
-				self.publisher.send(.failure(error))
 			}
+			
+			connectionGroup.start(queue: self.listenerQueue)
+			
+		} catch {
+			self.publisher.send(.failure(error))
 		}
-
-		monitor.start(queue: listenerQueue)
 	}
 	
 	public func stopScanning() {

@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-public class SSDPClient {
+public actor SSDPClient {
 	public enum Backend: String {
 		case network
 		case blueSocket
@@ -22,26 +22,26 @@ public class SSDPClient {
 		self.backend = backend.backend
     }
 
-    public var isScanning: Bool {
-        backend.isScanning
+	public func isScanning() async -> Bool {
+        await backend.isScanning
     }
 	
-	public func setRequiredInterfaceType(_ interfaceType: RequiredInterfaceType?) {
-		backend.requiredInterfaceType = interfaceType
+	public func setRequiredInterfaceType(_ interfaceType: RequiredInterfaceType?) async {
+		await backend.set(requiredInterfaceType: interfaceType)
 	}
 	
-	public func set(backend: Backend) {
-		if self.backend.isScanning {
-			self.backend.stopScanning()
+	public func set(backend: Backend) async {
+		if await self.backend.isScanning {
+			await self.backend.stopScanning()
 		}
 		self.backend = backend.backend
 	}
 
-    public func startScanning(for duration: Duration) -> AnyPublisher<Result<URL, Error>, Never> {
-        backend.startScanning(for: duration)
+    public func startScanning(for duration: Duration) async -> AnyPublisher<Result<URL, Error>, Never> {
+		await backend.startScanning(for: duration)
     }
 
-    public func stopScanning() {
-        backend.stopScanning()
+    public func stopScanning() async {
+		await backend.stopScanning()
     }
 }

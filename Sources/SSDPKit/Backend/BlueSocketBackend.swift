@@ -2,7 +2,21 @@ import Combine
 import Foundation
 import Socket
 
-public class BlueSocketBackend: SSDPBackend {
+public actor BlueSocketBackend: SSDPBackend {
+	public var subscriptionsCount: Int = 0
+	
+	public func incrementSubscriptionsCount() {
+		subscriptionsCount += 1
+	}
+	
+	public func decrementSubscriptionsCount() {
+		subscriptionsCount -= 1
+	}
+	
+	public func set(requiredInterfaceType: RequiredInterfaceType?) {
+		self.requiredInterfaceType = requiredInterfaceType
+	}
+	
 	public var requiredInterfaceType: RequiredInterfaceType?
 	
 	enum ErrorType: Error {
@@ -20,10 +34,6 @@ public class BlueSocketBackend: SSDPBackend {
 	// MARK: Initialisation
 
 	init() {}
-
-	deinit {
-		self.stopScanning()
-	}
 
 	// MARK: Private functions
 
@@ -47,13 +57,17 @@ public class BlueSocketBackend: SSDPBackend {
 		let queue = DispatchQueue.global()
 
 		queue.async { [weak self] in
-			while self?.isScanning == true {
-				self?.readResponses()
+			Task { [weak self] in
+				while await self?.isScanning == true {
+					await self?.readResponses()
+				}
 			}
 		}
 
 		queue.asyncAfter(deadline: .now() + .seconds(Int(duration.components.seconds))) { [weak self] in
-			self?.stopScanning()
+			Task { [weak self] in
+				await self?.stopScanning()
+			}
 		}
 	}
 

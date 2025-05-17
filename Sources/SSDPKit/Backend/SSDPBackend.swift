@@ -5,10 +5,12 @@ public enum RequiredInterfaceType {
 	case wifi, ethernet
 }
 
-public protocol SSDPBackend: AnyObject {
+public protocol SSDPBackend: Actor {
     var isScanning: Bool { get }
     var publisher: PassthroughSubject<Result<URL, Error>, Never> { get }
-	var requiredInterfaceType: RequiredInterfaceType? { get set }
+	var requiredInterfaceType: RequiredInterfaceType? { get }
+	
+	func set(requiredInterfaceType: RequiredInterfaceType?)
 
 	func scan(for duration: Duration)
     func startScanning(for duration: Duration) -> AnyPublisher<Result<URL, Error>, Never>
@@ -16,18 +18,30 @@ public protocol SSDPBackend: AnyObject {
 
     // Helper
     func locationURL(from data: Data) -> URL?
+	
+	var subscriptionsCount: Int { get }
+	func incrementSubscriptionsCount()
+	func decrementSubscriptionsCount()
 }
 
 public extension SSDPBackend {
 	func startScanning(for duration: Duration) -> AnyPublisher<Result<URL, Error>, Never> {
         return publisher
             .handleEvents { [weak self] _ in
-                // Start scan only when subscriber appears
-                if self?.isScanning == false {
-                    self?.scan(for: duration)
-                }
+				Task { [weak self] in
+					await self?.incrementSubscriptionsCount()
+					// Start scan only when subscriber appears
+					if await self?.isScanning == false {
+						await self?.scan(for: duration)
+					}
+				}
             } receiveCancel: { [weak self] in
-                self?.stopScanning()
+				Task { [weak self] in
+					await self?.decrementSubscriptionsCount()
+					if await self?.subscriptionsCount == 0 {
+						await self?.stopScanning()
+					}
+				}
             }
             .eraseToAnyPublisher()
     }
